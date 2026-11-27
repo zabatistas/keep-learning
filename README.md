@@ -23,6 +23,17 @@ cd vibe-learn
 ./install.sh --hub-dir ~/my-learnings --cursor-repo ~/projects/my-service
 ```
 
+### Windows
+
+The installer needs **Git for Windows** (it ships Git Bash). From PowerShell, use the wrapper, which takes the same options:
+
+```powershell
+.\install.ps1
+.\install.ps1 --claude-code --hub-dir C:\Users\me\my-learnings
+```
+
+Or run `./install.sh` directly inside a Git Bash window. Don't run it with plain `bash` from PowerShell/cmd: that usually starts **WSL**, which installs into the Linux home directory instead of your Windows one. On Windows the saved hub path and dashboard link use the `C:/Users/...` form so agents, editors and browsers can open them.
+
 ### Claude Code
 
 This repo is also a Claude Code plugin marketplace (`.claude-plugin/marketplace.json`). Without the installer, inside Claude Code run:

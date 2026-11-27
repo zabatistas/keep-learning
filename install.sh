@@ -8,6 +8,20 @@ CURSOR_TARGET=""
 CLAUDE_CODE=0
 HUB_DIR="$DEFAULT_HUB_DIR"
 
+# Windows (Git Bash / MSYS / Cygwin): the shell uses /c/Users/... paths, while native tools
+# (the agent's file tools, editors, browsers) need C:/Users/.... cygpath converts both ways;
+# on Linux/macOS it does not exist and paths pass through unchanged.
+to_shell_path()  { if command -v cygpath >/dev/null 2>&1; then cygpath -u "$1"; else printf '%s\n' "$1"; fi; }
+to_native_path() { if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else printf '%s\n' "$1"; fi; }
+to_file_url() {
+  local p
+  p="$(to_native_path "$1")"
+  case "$p" in
+    /*) printf 'file://%s\n' "$p" ;;   # Linux/macOS: file:///home/...
+    *)  printf 'file:///%s\n' "$p" ;;  # Windows:     file:///C:/Users/...
+  esac
+}
+
 usage() {
   cat <<EOF
 Usage: ./install.sh [options]
@@ -23,11 +37,11 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --hub-dir)
-      HUB_DIR="$(realpath -m "$2")"
+      HUB_DIR="$(realpath -m "$(to_shell_path "$2")")"
       shift 2
       ;;
     --cursor-repo)
-      CURSOR_TARGET="$(realpath -m "$2")"
+      CURSOR_TARGET="$(realpath -m "$(to_shell_path "$2")")"
       shift 2
       ;;
     --claude-code)
@@ -48,8 +62,9 @@ done
 
 # 1. Record the user's chosen Learning Hub path in ~/.config/vibe-learn/hub_path
 mkdir -p "$HOME/.config/vibe-learn"
-echo "$HUB_DIR" > "$HOME/.config/vibe-learn/hub_path"
-echo "[1/4] Configured Central Learning Hub path -> $HUB_DIR"
+# Store the native form so agents on Windows can open it with their own file tools
+to_native_path "$HUB_DIR" > "$HOME/.config/vibe-learn/hub_path"
+echo "[1/4] Configured Central Learning Hub path -> $(to_native_path "$HUB_DIR")"
 echo "      (Saved pointer in ~/.config/vibe-learn/hub_path)"
 
 # 2. Initialize the Learning Hub if index.html / INDEX.md don't exist yet
@@ -93,4 +108,4 @@ fi
 
 echo ""
 echo "Done! Open your Learning Hub dashboard anytime at:"
-echo "  file://$HUB_DIR/index.html"
+echo "  $(to_file_url "$HUB_DIR/index.html")"
